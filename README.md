@@ -5,7 +5,7 @@
 **Following improvements with Cursive v3.0.0 Update:**
 - Dark Harvest tick-time reduction now calculated seamless for all DoTs.
 - Duration for Corruption, Curse of Agony, Siphon Life, and Dark Harvest has been fixed.
-- Eye of Dormant Corruption, 3 sec. longer duration correctly applied for Corruption and Shadow Word: Pain.
+- Eye of Dormant Corruption Trinket, 3 sec. longer duration correctly applied for Corruption and Shadow Word: Pain.
 - UI improvements, added white border for targeted unit.
 
 ---
