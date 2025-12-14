@@ -179,9 +179,6 @@ Cursive.ResetUnitFrames = function()
 end
 
 ui.BarEnter = function()
-	if this.parent.healthBar then
-		this.parent.healthBar.border:SetBackdropBorderColor(1, 1, 1, 1)
-	end
 	this.parent.hover = true
 
 	GameTooltip_SetDefaultAnchor(GameTooltip, this)
@@ -217,12 +214,29 @@ ui.BarUpdate = function()
 
 		-- update health bar border
 		if this.healthBar.border then
-			if this.hover then
+			local isTargeted = UnitIsUnit("target", this.guid)
+
+			if isTargeted then
+				-- White for current target only
 				this.healthBar.border:SetBackdropBorderColor(1, 1, 1, 1)
-			elseif UnitAffectingCombat(this.guid) then
-				this.healthBar.border:SetBackdropBorderColor(.8, .2, .2, 1)
 			else
-				this.healthBar.border:SetBackdropBorderColor(.2, .2, .2, 1)
+				-- Black default
+				this.healthBar.border:SetBackdropBorderColor(0, 0, 0, 1)
+			end
+		end
+
+		-- update hover glow effect
+		if this.hoverGlow then
+			if this.hover then
+				-- Show all 4 glow edges
+				for _, glow in ipairs(this.hoverGlow) do
+					glow:Show()
+				end
+			else
+				-- Hide all 4 glow edges
+				for _, glow in ipairs(this.hoverGlow) do
+					glow:Hide()
+				end
 			end
 		end
 	end
@@ -405,6 +419,64 @@ local function CreateBarSecondSection(unitFrame, guid)
 			border:SetPoint("BOTTOMRIGHT", healthBar.bar, "BOTTOMRIGHT", 2, -2)
 			healthBar.border = border
 		end
+
+		-- create inner glow effect for hover (gradient from edge)
+		local glowLayers = {}
+		local numLayers = 5  -- Number of gradient layers
+		local maxGlowWidth = 8  -- Maximum glow reach in pixels
+
+		-- Create gradient layers for each edge
+		for layer = 1, numLayers do
+			local intensity = (numLayers - layer + 1) / numLayers * 0.25  -- Decreasing intensity
+			local width = math.floor(layer * maxGlowWidth / numLayers)  -- Increasing width
+
+			-- Top glow layer
+			local glowTop = healthBar:CreateTexture(nil, "ARTWORK")
+			glowTop:SetTexture("Interface\\Buttons\\WHITE8X8")
+			glowTop:SetBlendMode("ADD")
+			glowTop:SetVertexColor(1, 1, 1, intensity)
+			glowTop:SetPoint("TOPLEFT", healthBar, "TOPLEFT", width, -layer + 1)
+			glowTop:SetPoint("TOPRIGHT", healthBar, "TOPRIGHT", -width, -layer + 1)
+			glowTop:SetHeight(1)
+			glowTop:Hide()
+			table.insert(glowLayers, glowTop)
+
+			-- Bottom glow layer
+			local glowBottom = healthBar:CreateTexture(nil, "ARTWORK")
+			glowBottom:SetTexture("Interface\\Buttons\\WHITE8X8")
+			glowBottom:SetBlendMode("ADD")
+			glowBottom:SetVertexColor(1, 1, 1, intensity)
+			glowBottom:SetPoint("BOTTOMLEFT", healthBar, "BOTTOMLEFT", width, layer - 1)
+			glowBottom:SetPoint("BOTTOMRIGHT", healthBar, "BOTTOMRIGHT", -width, layer - 1)
+			glowBottom:SetHeight(1)
+			glowBottom:Hide()
+			table.insert(glowLayers, glowBottom)
+
+			-- Left glow layer
+			local glowLeft = healthBar:CreateTexture(nil, "ARTWORK")
+			glowLeft:SetTexture("Interface\\Buttons\\WHITE8X8")
+			glowLeft:SetBlendMode("ADD")
+			glowLeft:SetVertexColor(1, 1, 1, intensity)
+			glowLeft:SetPoint("TOPLEFT", healthBar, "TOPLEFT", layer - 1, -width)
+			glowLeft:SetPoint("BOTTOMLEFT", healthBar, "BOTTOMLEFT", layer - 1, width)
+			glowLeft:SetWidth(1)
+			glowLeft:Hide()
+			table.insert(glowLayers, glowLeft)
+
+			-- Right glow layer
+			local glowRight = healthBar:CreateTexture(nil, "ARTWORK")
+			glowRight:SetTexture("Interface\\Buttons\\WHITE8X8")
+			glowRight:SetBlendMode("ADD")
+			glowRight:SetVertexColor(1, 1, 1, intensity)
+			glowRight:SetPoint("TOPRIGHT", healthBar, "TOPRIGHT", -layer + 1, -width)
+			glowRight:SetPoint("BOTTOMRIGHT", healthBar, "BOTTOMRIGHT", -layer + 1, width)
+			glowRight:SetWidth(1)
+			glowRight:Hide()
+			table.insert(glowLayers, glowRight)
+		end
+
+		-- Store all glow layers in a table
+		unitFrame.hoverGlow = glowLayers
 	else
 		if config.showunitname then
 			local name = secondSection:CreateFontString(nil, "HIGH", "GameFontWhite")
@@ -454,7 +526,7 @@ local function CreateBarThirdSection(unitFrame, guid)
 
 		curse.timer = thirdSection:CreateFontString(nil, "OVERLAY", "GameFontNormal")
 		curse.timer:SetFontObject(GameFontHighlight)
-		curse.timer:SetFont(STANDARD_TEXT_FONT, config.cursetimersize, "OUTLINE")
+		curse.timer:SetFont(STANDARD_TEXT_FONT, 11, "OUTLINE")
 		curse.timer:SetTextColor(1, 1, 1)
 		curse.timer:SetAllPoints(curse)
 
