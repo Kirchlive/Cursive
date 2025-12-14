@@ -185,6 +185,29 @@ function curses:LoadCurses()
 			curses.comboPoints = currentComboPoints
 		end)
 	end
+
+	curses:CheckEyeOfDormantCorruption()
+
+	Cursive:RegisterEvent("PLAYER_EQUIPMENT_CHANGED", function()
+		curses:CheckEyeOfDormantCorruption()
+	end)
+end
+
+function curses:CheckEyeOfDormantCorruption()
+	local trinketItemId = 55111
+
+	for slot = 13, 14 do
+		local link = GetInventoryItemLink("player", slot)
+		if link then
+			local _, _, itemId = string.find(link, "item:(%d+)")
+			if itemId and tonumber(itemId) == trinketItemId then
+				curses.hasEyeOfDormantCorruption = true
+				return
+			end
+		end
+	end
+
+	curses.hasEyeOfDormantCorruption = false
 end
 
 function curses:ScanTooltipForDuration(curseSpellID)
@@ -213,13 +236,37 @@ function curses:ScanTooltipForDuration(curseSpellID)
 end
 
 function curses:GetCurseDuration(curseSpellID)
+	local duration
+	local durationFromTooltip = false
+
 	if curses.trackedCurseIds[curseSpellID].variableDuration then
-		return curses:ScanTooltipForDuration(curseSpellID)
+		duration = curses:ScanTooltipForDuration(curseSpellID)
+		durationFromTooltip = true
 	elseif curses.trackedCurseIds[curseSpellID].calculateDuration then
-		return curses.trackedCurseIds[curseSpellID].calculateDuration()
+		duration = curses.trackedCurseIds[curseSpellID].calculateDuration()
+	else
+		duration = curses.trackedCurseIds[curseSpellID].duration
 	end
 
-	return curses.trackedCurseIds[curseSpellID].duration
+	local spellName = curses.trackedCurseIds[curseSpellID].name
+	
+	-- Corruption: Tooltip wird NICHT vom Server aktualisiert, immer +3 addieren
+	if spellName == L["corruption"] then
+		curses:CheckEyeOfDormantCorruption()
+		if curses.hasEyeOfDormantCorruption then
+			duration = duration + 3
+		end
+	-- SW:P: Tooltip WIRD vom Server aktualisiert, nur +3 wenn NICHT aus Tooltip
+	elseif spellName == L["shadow word: pain"] then
+		if not durationFromTooltip then
+			curses:CheckEyeOfDormantCorruption()
+			if curses.hasEyeOfDormantCorruption then
+				duration = duration + 3
+			end
+		end
+	end
+
+	return duration
 end
 
 function curses:ScanGuidForCurse(guid, curseSpellID)
@@ -263,7 +310,30 @@ Cursive:RegisterEvent("LEARNED_SPELL_IN_TAB", function()
 	curses:LoadCurses()
 end)
 
+-- Finalize Dark Harvest reduction when channeling stops
+local function FinalizeDarkHarvest()
+	if curses.darkHarvestData.targetGuid then
+		local targetGuid = curses.darkHarvestData.targetGuid
+		local dhEndTime = GetTime()
+		
+		if curses.guids[targetGuid] then
+			for curseName, curseData in pairs(curses.guids[targetGuid]) do
+				if curseData.dhStartTime then
+					-- Calculate how long DH was active for this DoT
+					local dhActiveTime = dhEndTime - curseData.dhStartTime
+					-- Add 40% of that time as extra reduction (1.4x speed = 0.4 extra per second)
+					curseData.dhAccumulatedReduction = (curseData.dhAccumulatedReduction or 0) + (dhActiveTime * 0.4)
+					curseData.dhStartTime = nil
+				end
+			end
+		end
+		
+		curses.darkHarvestData = {}
+	end
+end
+
 local function StopChanneling()
+	FinalizeDarkHarvest()
 	curses.isChanneling = false
 end
 
@@ -273,6 +343,21 @@ end);
 Cursive:RegisterEvent("SPELLCAST_CHANNEL_STOP", StopChanneling);
 Cursive:RegisterEvent("SPELLCAST_INTERRUPTED", StopChanneling);
 Cursive:RegisterEvent("SPELLCAST_FAILED", StopChanneling);
+
+-- Start Dark Harvest tracking for all affected DoTs on target
+function curses:StartDarkHarvestTracking(targetGuid)
+	if not curses.guids[targetGuid] then return end
+	
+	local now = GetTime()
+	
+	for curseName, curseData in pairs(curses.guids[targetGuid]) do
+		-- Check if this spell is affected by Dark Harvest
+		if curses.trackedCurseIds[curseData.spellID] and 
+		   curses.trackedCurseIds[curseData.spellID].darkHarvest then
+			curseData.dhStartTime = now
+		end
+	end
+end
 
 Cursive:RegisterEvent("UNIT_CASTEVENT", function(casterGuid, targetGuid, event, spellID, castDuration)
 	-- immolate will fire both start and cast
@@ -353,19 +438,28 @@ Cursive:RegisterEvent("UNIT_CASTEVENT", function(casterGuid, targetGuid, event, 
 			curses.pendingCast = {}
 		end
 	elseif event == "CHANNEL" then
-		-- dark harvest
+		-- Dark Harvest
 		if curses.darkHarvestSpellIds[spellID] then
 			local _, guid = UnitExists("player")
 			if casterGuid ~= guid then
 				return
 			end
 
-			curses.darkHarvestData = {
-				spellID = spellID,
-				targetGuid = targetGuid,
-				castDuration = curses:ScanTooltipForDuration(spellID),
-				start = GetTime()
-			}
+			local now = GetTime()
+			
+			-- Check if this is a NEW Dark Harvest (not the same one we already processed)
+			local lastDHTime = curses.darkHarvestData.start or 0
+			if now > lastDHTime + 1 then  -- At least 1 second since last DH
+				-- Store Dark Harvest data
+				curses.darkHarvestData = {
+					spellID = spellID,
+					targetGuid = targetGuid,
+					start = now
+				}
+				
+				-- Start tracking for all affected DoTs on this target
+				curses:StartDarkHarvestTracking(targetGuid)
+			end
 		end
 	end
 end)
@@ -447,61 +541,18 @@ Cursive:RegisterEvent("CHAT_MSG_SPELL_AURA_GONE_OTHER", function(message)
 end
 )
 
-function curses:GetLastTickTime(curseData)
-	local ticks = curses.trackedCurseIds[curseData.spellID].numTicks
-	if not ticks then
-		return GetTime()
-	end
-
-	local tickTime = curseData.duration / ticks
-	local currentTime = GetTime() + tickTime * .2 -- dh won't apply to previous tick if within 20% of tick time
-
-	return math.floor((currentTime - curseData.start) / tickTime) * tickTime + curseData.start
-end
-
-function curses:TrackDarkHarvest(curseData)
-	if curses.darkHarvestData["targetGuid"] and curses.darkHarvestData["targetGuid"] == curseData["targetGuid"] then
-		local dhActive = false
-		-- check if still channeling
-		if curses.isChanneling then
-			local dhTimeRemaining = curses.darkHarvestData.castDuration - (GetTime() - curses.darkHarvestData.start)
-			-- check if dh still active based on cast duration
-			if dhTimeRemaining > 0 then
-				dhActive = true
-				-- dh is active
-				if not curseData["dhStartTime"] then
-					curseData["dhStartTime"] = curses:GetLastTickTime(curseData) -- dh will reduce full tick duration
-				end
-			end
-		end
-		if curseData["dhStartTime"] and dhActive == false and not curseData["dhEndTime"] then
-			-- if dh no longer active, store end time if not already stored
-			curseData["dhEndTime"] = GetTime()
-		end
-	end
-end
-
-function curses:GetDarkHarvestReduction(curseData)
-	if curseData["dhStartTime"] then
-		local endTime = curseData["dhEndTime"] or GetTime()
-		local dhActiveTime = endTime - curseData["dhStartTime"]
-		if dhActiveTime > 0 then
-			return dhActiveTime * .3 -- 30% reduction
-		end
-	end
-	return 0
-end
-
 function curses:TimeRemaining(curseData)
-	local dhReduction = 0
-
-	if curses.trackedCurseIds[curseData.spellID].darkHarvest then
-		curses:TrackDarkHarvest(curseData)
-
-		dhReduction = curses:GetDarkHarvestReduction(curseData)
+	local dhReduction = curseData.dhAccumulatedReduction or 0
+	
+	-- If Dark Harvest is currently active for this DoT, calculate live reduction
+	if curseData.dhStartTime then
+		local dhActiveTime = GetTime() - curseData.dhStartTime
+		-- 1.4x speed means 0.4 extra seconds per real second
+		dhReduction = dhReduction + (dhActiveTime * 0.4)
 	end
-
+	
 	local remaining = curseData.duration - (GetTime() - curseData.start) - dhReduction
+	
 	if Cursive.db.profile.curseshowdecimals and remaining < 10 then
 		-- round to 1 decimal point
 		remaining = math.floor(remaining * 10) / 10
@@ -655,6 +706,14 @@ function curses:ApplyCurse(spellID, targetGuid, startTime, duration)
 		targetGuid = targetGuid,
 		currentPlayer = true,
 	}
+	
+	-- If Dark Harvest is currently active on this target, start tracking for this new DoT
+	if curses.isChanneling and 
+	   curses.darkHarvestData.targetGuid == targetGuid and
+	   curses.trackedCurseIds[spellID] and
+	   curses.trackedCurseIds[spellID].darkHarvest then
+		curses.guids[targetGuid][name].dhStartTime = GetTime()
+	end
 end
 
 function curses:UpdateCurse(spellID, targetGuid, startTime)
