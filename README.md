@@ -1,12 +1,24 @@
 # Cursive
 
+## Update for Turtle WoW v1.18.0 (7233)
+
+**Following improvements with Cursive v3.0.0 Update:**
+- Dark Harvest tick-time reduction now calculated seamless for all DoTs.
+- DoT duration for Corruption, Curse of Agony, Siphon Life, and Dark Harvest has been fixed.
+- Eye of Dormant Corruption, 3 sec. longer duration correctly applied for Corruption and Shadow Word: Pain.
+- UI improvements, added white border for targeted unit.
+
+---
+
+This is a update fork, credits to [pepopo978](https://github.com/pepopo978/Cursive)
+
 > [!IMPORTANT]
 >
 > **This addon requires you to have [SuperWoW](https://github.com/balakethelock/SuperWoW) installed.**
 >
 > It won't work without it. Really.
 
-![image](https://github.com/pepopo978/Cursive/assets/149287158/801511af-29c7-4baf-b1ac-5e8c52f0f846)
+![image](https://i.imgur.com/RexUJmh.png)
 
 Cursive combines ShaguScan unit scanning with curse tracking similar to DotTimer and the ability to automatically curse
 targets similar to Decursive.
@@ -195,4 +207,3 @@ There is an option "always show current target" that will display your current t
 
 You can ignore mobs based on their unit name using the ignored mob list filter.  It is comma separated and you need to press enter to get it to save.  For example can do:
 `whelp,scarab` to ignore all mobs with those strings in their name.
-
