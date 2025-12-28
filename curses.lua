@@ -74,6 +74,27 @@ local curses = {
 	},
 }
 
+-- Bleed-immune creature types (Elementals, Undead, Mechanical cannot bleed)
+local BLEED_IMMUNE_TYPES = {
+	["Elemental"] = true,
+	["Undead"] = true,
+	["Mechanical"] = true,
+}
+
+-- Check if a unit can receive bleed effects
+local function CanApplyBleed(guid)
+	if not UnitExists(guid) then
+		return true -- Can't check, assume can bleed
+	end
+	
+	local creatureType = UnitCreatureType(guid)
+	if creatureType and BLEED_IMMUNE_TYPES[creatureType] then
+		return false
+	end
+	
+	return true
+end
+
 -- combat events for curses
 local fades_test = L["(.+) fades from (.+)"]
 local resist_test = L["Your (.+) was resisted by (.+)"]
@@ -249,20 +270,20 @@ function curses:GetCurseDuration(curseSpellID)
 	end
 
 	local spellName = curses.trackedCurseIds[curseSpellID].name
+	local baseDuration = curses.trackedCurseIds[curseSpellID].duration
 	
-	-- Corruption: Tooltip wird NICHT vom Server aktualisiert, immer +3 addieren
-	if spellName == L["corruption"] then
+	-- Eye of Dormant Corruption trinket handling
+	-- Only add +3 if tooltip shows base duration (trinket bonus not yet included)
+	-- This prevents double-counting when the server already applies the bonus
+	if spellName == L["corruption"] or spellName == L["shadow word: pain"] then
 		curses:CheckEyeOfDormantCorruption()
 		if curses.hasEyeOfDormantCorruption then
-			duration = duration + 3
-		end
-	-- SW:P: Tooltip WIRD vom Server aktualisiert, nur +3 wenn NICHT aus Tooltip
-	elseif spellName == L["shadow word: pain"] then
-		if not durationFromTooltip then
-			curses:CheckEyeOfDormantCorruption()
-			if curses.hasEyeOfDormantCorruption then
+			-- Only add trinket bonus if duration matches base (bonus not included)
+			-- Allow small tolerance for rounding differences
+			if duration <= baseDuration + 0.5 then
 				duration = duration + 3
 			end
+			-- If duration > baseDuration, the game already applied the trinket bonus
 		end
 	end
 
@@ -684,8 +705,14 @@ function curses:ApplyCurse(spellID, targetGuid, startTime, duration)
 	local rank = curses.trackedCurseIds[spellID].rank
 
 	if curses.isDruid and name == L["rake"] then
-		-- check if mob is in bleed whitelist first
-		-- these bosses are most likely to hit 48 client debuff cap
+		-- First check: Creature type based bleed immunity (Elementals, Undead, Mechanical)
+		if not CanApplyBleed(targetGuid) then
+			-- Target is bleed immune by creature type, do not track
+			return
+		end
+		
+		-- Second check: For mobs not in whitelist, verify debuff is actually on target
+		-- (handles debuff cap scenarios where rake might not have been applied)
 		if not curses.mobsThatBleed[targetGuid] then
 			if not curses:ScanGuidForCurse(targetGuid, spellID) then
 				-- rake not found on target, do not apply

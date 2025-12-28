@@ -8,6 +8,43 @@
 - Eye of Dormant Corruption Trinket, 3 sec. longer duration correctly applied for Corruption and Shadow Word: Pain.
 - UI improvements, added white border for targeted unit.
 
+### v3.1.0 Bugfixes
+
+**Bug #1: Eye of Dormant Corruption Trinket**
+- Fixed double-counting of trinket bonus when tooltip already includes the +3 seconds
+- Now correctly detects if the game has already applied the trinket duration bonus
+- Corruption and Shadow Word: Pain durations are now calculated correctly with the trinket equipped
+
+**Bug #2: Rapid Deterioration Hardcoded Values**
+- Reset all Affliction DoT durations to correct base values:
+  - Corruption: 18 sec (was incorrectly 16.92)
+  - Curse of Agony: 24 sec (was incorrectly 22.56)
+  - Siphon Life: 30 sec (was incorrectly 28.20)
+  - Dark Harvest: 8 sec (was incorrectly 7.52)
+- Tooltip scanning now handles Rapid Deterioration talent dynamically
+
+**Bug #3a: Rake Bleed Immunity**
+- Added creature type detection for bleed-immune mobs
+- Elementals, Undead, and Mechanical mobs no longer show fake Rake bleed tracking
+
+**Bug #3b: Rip Duration (already correct)**
+- Verified: Rip duration correctly scales with combo points (8 + CP × 2)
+
+### Test Framework
+
+A new in-game test framework has been added for validation:
+
+```
+/cursivetest help      - Show all available tests
+/cursivetest trinket   - Test trinket detection and expected durations
+/cursivetest base      - Show all base durations by class
+/cursivetest rip       - Test Rip combo point scaling
+/cursivetest rake      - Test bleed immunity on current target
+/cursivetest dots      - Show currently tracked DoTs
+/cursivetest talents   - Debug talent point info
+/cursivetest all       - Run all tests
+```
+
 ---
 
 This is a update fork, credits to [pepopo978](https://github.com/pepopo978/Cursive)
@@ -17,8 +54,6 @@ This is a update fork, credits to [pepopo978](https://github.com/pepopo978/Cursi
 > **This addon requires you to have [SuperWoW](https://github.com/balakethelock/SuperWoW) installed.**
 >
 > It won't work without it. Really.
-
-![image](https://i.imgur.com/RexUJmh.png)
 
 Cursive combines ShaguScan unit scanning with curse tracking similar to DotTimer and the ability to automatically curse
 targets similar to Decursive.
