@@ -1,8 +1,8 @@
 # Cursive
 
-## Cursive Update for Turtle WoW v1.18.0 (7233)
+## Cursive Update for Turtle WoW v1.18.0
 
-### v3.0.0 following improvements for newest Turtle Version
+### Update v3.0.0
 - Dark Harvest tick-time reduction now calculated seamless for all DoTs.
 - Duration for Corruption, Curse of Agony, Siphon Life, and Dark Harvest has been fixed.
 - Eye of Dormant Corruption Trinket, 3 sec. longer duration correctly applied for Corruption and Shadow Word: Pain.
@@ -10,7 +10,7 @@
 
 ![image](https://i.imgur.com/RexUJmh.png)
 
-### v3.1.0 Update
+### Update v3.1.0
 
 **Eye of Dormant Corruption Trinket**
 - Fixed double-counting of trinket bonus when tooltip already includes the +3 seconds
@@ -18,11 +18,7 @@
 - Corruption and Shadow Word: Pain durations are now calculated correctly with the trinket equipped
 
 **Rapid Deterioration Hardcoded Values**
-- Reset all Affliction DoT durations to correct base values:
-  - Corruption: 18 sec (was incorrectly 16.92)
-  - Curse of Agony: 24 sec (was incorrectly 22.56)
-  - Siphon Life: 30 sec (was incorrectly 28.20)
-  - Dark Harvest: 8 sec (was incorrectly 7.52)
+- Set all Affliction DoT durations to correct base values:
 - Tooltip scanning now handles `Rapid Deterioration talent` dynamically
 
 **Rake Bleed Immunity**
