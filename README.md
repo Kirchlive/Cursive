@@ -1,8 +1,8 @@
 # Cursive
 
-## Update for Turtle WoW v1.18.0 (7233)
+## Cursive Update for Turtle WoW v1.18.0 (7233)
 
-**Following improvements with Cursive v3.0.0 Update:**
+### v3.0.0 following improvements for newest Turtle Version
 - Dark Harvest tick-time reduction now calculated seamless for all DoTs.
 - Duration for Corruption, Curse of Agony, Siphon Life, and Dark Harvest has been fixed.
 - Eye of Dormant Corruption Trinket, 3 sec. longer duration correctly applied for Corruption and Shadow Word: Pain.
