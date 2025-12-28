@@ -10,7 +10,7 @@
 
 ![image](https://i.imgur.com/RexUJmh.png)
 
-### v3.1.0 Bugfixes
+### v3.1.0 Update
 
 **Bug #1: Eye of Dormant Corruption Trinket**
 - Fixed double-counting of trinket bonus when tooltip already includes the +3 seconds
@@ -23,7 +23,7 @@
   - Curse of Agony: 24 sec (was incorrectly 22.56)
   - Siphon Life: 30 sec (was incorrectly 28.20)
   - Dark Harvest: 8 sec (was incorrectly 7.52)
-- Tooltip scanning now handles `Rapid Deterioration` talent dynamically
+- Tooltip scanning now handles `Rapid Deterioration talent` dynamically
 
 **Bug #3a: Rake Bleed Immunity**
 - Added creature type detection for bleed-immune mobs
