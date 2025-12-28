@@ -32,6 +32,8 @@
 
 This is a update fork, credits to [pepopo978](https://github.com/pepopo978/Cursive)
 
+---
+
 > [!IMPORTANT]
 >
 > **This addon requires you to have [SuperWoW](https://github.com/balakethelock/SuperWoW) installed.**
