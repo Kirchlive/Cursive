@@ -8,6 +8,8 @@
 - Eye of Dormant Corruption Trinket, 3 sec. longer duration correctly applied for Corruption and Shadow Word: Pain.
 - UI improvements, added white border for targeted unit.
 
+![image](https://i.imgur.com/RexUJmh.png)
+
 ### v3.1.0 Bugfixes
 
 **Bug #1: Eye of Dormant Corruption Trinket**
