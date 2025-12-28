@@ -15,7 +15,7 @@
 **Eye of Dormant Corruption Trinket**
 - Fixed double-counting of trinket bonus when tooltip already includes the +3 seconds
 - Now correctly detects if the game has already applied the trinket duration bonus
-- Corruption and Shadow Word: Pain durations are now calculated correctly with the trinket equipped
+- Corruption and Shadow Word: Pain durations are now calculated correctly with trinket
 
 **Rapid Deterioration Hardcoded Values**
 - Set all Affliction DoT durations to correct base values:
