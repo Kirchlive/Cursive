@@ -18,12 +18,12 @@
 - Corruption and Shadow Word: Pain durations are now calculated correctly with trinket
 
 **Rapid Deterioration Hardcoded Values**
-- Set all Affliction DoT durations to correct base values:
-- Tooltip scanning now handles `Rapid Deterioration talent` dynamically
+- Set all Affliction DoT durations to correct base value
+- Warlock talent “Rapid Deterioration” is now calculated dynamically for DoTs
 
 **Rake Bleed Immunity**
 - Added creature type detection for bleed-immune mobs
-- Elementals, Undead, and Mechanical mobs no longer show fake Rake bleed tracking
+- Elementals, Undead, and Mechanical mobs no longer show wrong Rake bleed tracking
 
 **Rip Duration**
 - Verified: Rip duration correctly scales with combo points (8 + CP × 2)
